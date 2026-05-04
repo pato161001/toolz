@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FREQ — Song Anatomy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@200;400;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #050508;
+    --surface: #0d0d14;
+    --border: #1e1e2e;
+    --accent: #00ff9d;
+    --accent2: #ff3c6e;
+    --accent3: #7c6dff;
+    --text: #e8e8f0;
+    --muted: #555568;
+    --mono: 'Space Mono', monospace;
+    --display: 'Unbounded', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--mono);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.03) 2px,
+      rgba(0,0,0,0.03) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Grid bg */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,157,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,157,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 56px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+
+  .logo {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: clamp(28px, 5vw, 44px);
+    letter-spacing: -0.03em;
+    line-height: 1;
+    color: var(--accent);
+    text-shadow: 0 0 40px rgba(0,255,157,0.3);
+  }
+
+  .logo span {
+    display: block;
+    font-weight: 200;
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    margin-top: 6px;
+    text-transform: uppercase;
+  }
+
+  .version {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-align: right;
+    padding-top: 4px;
+  }
+
+  /* Input zone */
+  .input-zone {
+    margin-bottom: 40px;
+  }
+
+  .input-label {
+    font-size: 10px;
+    letter-spacing: 0.25em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    display: block;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .url-input {
+    flex: 1;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    padding: 14px 18px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.02em;
+  }
+
+  .url-input::placeholder { color: var(--muted); }
+  .url-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 20px rgba(0,255,157,0.1);
+  }
+
+  .analyse-btn {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 14px 28px;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .analyse-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255,255,255,0.2);
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+  }
+
+  .analyse-btn:hover::before { transform: translateX(0); }
+  .analyse-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,255,157,0.4); }
+  .analyse-btn:active { transform: translateY(0); }
+  .analyse-btn:disabled {
+    background: var(--border);
+    color: var(--muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  /* Error */
+  .error-msg {
+    font-size: 11px;
+    color: var(--accent2);
+    margin-top: 10px;
+    letter-spacing: 0.05em;
+    display: none;
+  }
+  .error-msg.show { display: block; }
+
+  /* Loading */
+  .loading-state {
+    display: none;
+    padding: 48px 0;
+    text-align: center;
+  }
+  .loading-state.show { display: block; }
+
+  .loader-bars {
+    display: inline-flex;
+    gap: 4px;
+    margin-bottom: 20px;
+  }
+
+  .loader-bars span {
+    display: block;
+    width: 3px;
+    background: var(--accent);
+    animation: barPulse 1s ease-in-out infinite;
+  }
+
+  .loader-bars span:nth-child(1) { height: 20px; animation-delay: 0s; }
+  .loader-bars span:nth-child(2) { height: 36px; animation-delay: 0.1s; }
+  .loader-bars span:nth-child(3) { height: 28px; animation-delay: 0.2s; }
+  .loader-bars span:nth-child(4) { height: 44px; animation-delay: 0.3s; }
+  .loader-bars span:nth-child(5) { height: 32px; animation-delay: 0.4s; }
+  .loader-bars span:nth-child(6) { height: 20px; animation-delay: 0.5s; }
+  .loader-bars span:nth-child(7) { height: 38px; animation-delay: 0.6s; }
+
+  @keyframes barPulse {
+    0%, 100% { opacity: 0.2; transform: scaleY(0.5); }
+    50% { opacity: 1; transform: scaleY(1); }
+  }
+
+  .loading-text {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .loading-status {
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 6px;
+    min-height: 18px;
+  }
+
+  /* Track card */
+  .track-card {
+    display: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 24px;
+    margin-bottom: 32px;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .track-card.show { display: flex; }
+  .track-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+  }
+
+  .track-art {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+
+  .track-info { flex: 1; min-width: 0; }
+
+  .track-title {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+
+  .track-artist {
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+
+  .track-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .badge {
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid;
+  }
+
+  .badge-green { border-color: var(--accent); color: var(--accent); }
+  .badge-red { border-color: var(--accent2); color: var(--accent2); }
+  .badge-purple { border-color: var(--accent3); color: var(--accent3); }
+
+  /* Analysis output */
+  .analysis-output {
+    display: none;
+  }
+  .analysis-output.show { display: block; }
+
+  /* Section blocks */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    margin-top: 40px;
+  }
+
+  .section-tag {
+    font-size: 9px;
+    font-family: var(--display);
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    background: var(--accent);
+    color: #000;
+  }
+
+  .section-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Timeline */
+  .timeline {
+    position: relative;
+    padding-left: 0;
+  }
+
+  .timeline-item {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 0;
+    margin-bottom: 2px;
+    animation: fadeSlideIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  .ts {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--accent);
+    padding: 14px 16px 14px 0;
+    border-right: 1px solid var(--border);
+    text-align: right;
+    white-space: nowrap;
+    letter-spacing: 0.05em;
+    position: relative;
+  }
+
+  .ts::after {
+    content: '';
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 7px;
+    height: 7px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  .segment {
+    padding: 12px 0 12px 20px;
+  }
+
+  .seg-name {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    color: var(--text);
+  }
+
+  .seg-desc {
+    font-size: 12px;
+    color: #9090aa;
+    line-height: 1.6;
+    letter-spacing: 0.01em;
+  }
+
+  .seg-tags {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .seg-tag {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 2px 7px;
+    background: rgba(124,109,255,0.15);
+    color: var(--accent3);
+    border: 1px solid rgba(124,109,255,0.25);
+  }
+
+  /* Prose sections */
+  .prose-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent3);
+    padding: 20px 24px;
+    margin-bottom: 8px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #b0b0c8;
+    letter-spacing: 0.02em;
+    animation: fadeSlideIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .prose-block strong {
+    color: var(--text);
+    font-weight: 700;
+  }
+
+  .prose-block.accent2 { border-left-color: var(--accent2); }
+  .prose-block.accent { border-left-color: var(--accent); }
+
+  /* Vibe meter */
+  .vibe-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .vibe-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    padding: 16px 20px;
+    animation: fadeSlideIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .vibe-label {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .vibe-value {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+
+  .vibe-bar-track {
+    height: 2px;
+    background: var(--border);
+    width: 100%;
+  }
+
+  .vibe-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent3), var(--accent));
+    width: 0%;
+    transition: width 1s ease 0.5s;
+  }
+
+  /* Key/BPM display */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .stat-cell {
+    background: var(--surface);
+    padding: 16px;
+    text-align: center;
+    animation: fadeSlideIn 0.4s ease forwards;
+    opacity: 0;
+  }
+
+  .stat-val {
+    font-family: var(--display);
+    font-weight: 900;
+    font-size: 22px;
+    letter-spacing: -0.03em;
+    color: var(--accent);
+    display: block;
+    margin-bottom: 4px;
+  }
+
+  .stat-key {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 60px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .footer-note {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+
+  .new-analysis-btn {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    background: none;
+    border: 1px solid var(--accent);
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: none;
+  }
+  .new-analysis-btn.show { display: block; }
+  .new-analysis-btn:hover { background: var(--accent); color: #000; }
+
+  /* Cursor blink in loading */
+  .blink { animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .vibe-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .input-row { flex-direction: column; }
+    .analyse-btn { width: 100%; }
+    .track-card { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+  <header>
+    <div>
+      <div class="logo">FREQ<span>Song Anatomy Engine v1.0</span></div>
+    </div>
+    <div class="version">POWERED BY<br>CLAUDE AI</div>
+  </header>
+
+  <div class="input-zone">
+    <label class="input-label" for="spotifyUrl">// Paste Spotify track URL</label>
+    <div class="input-row">
+      <input
+        type="text"
+        id="spotifyUrl"
+        class="url-input"
+        placeholder="https://open.spotify.com/track/..."
+        autocomplete="off"
+        spellcheck="false"
+      />
+      <button class="analyse-btn" id="analyseBtn" onclick="startAnalysis()">ANALYSE →</button>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <!-- Loading -->
+  <div class="loading-state" id="loadingState">
+    <div class="loader-bars">
+      <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div class="loading-text">ANALYSING SIGNAL</div>
+    <div class="loading-status" id="loadingStatus">Fetching track data<span class="blink">_</span></div>
+  </div>
+
+  <!-- Track card -->
+  <div class="track-card" id="trackCard">
+    <img class="track-art" id="trackArt" src="" alt="Album art">
+    <div class="track-info">
+      <div class="track-title" id="trackTitle">—</div>
+      <div class="track-artist" id="trackArtist">—</div>
+      <div class="track-badges" id="trackBadges"></div>
+    </div>
+  </div>
+
+  <!-- Analysis -->
+  <div class="analysis-output" id="analysisOutput"></div>
+
+  <div class="footer">
+    <div class="footer-note">FREQ © 2025 — Analysis is AI-generated interpretation</div>
+    <button class="new-analysis-btn" id="newAnalysisBtn" onclick="resetTool()">+ NEW ANALYSIS</button>
+  </div>
+
+</div>
+
+<script>
+const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+
+let currentTrackData = null;
+
+function extractSpotifyId(url) {
+  const patterns = [
+    /spotify\.com\/track\/([a-zA-Z0-9]+)/,
+    /spotify:track:([a-zA-Z0-9]+)/
+  ];
+  for (const p of patterns) {
+    const m = url.match(p);
+    if (m) return m[1];
+  }
+  return null;
+}
+
+function setError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+
+function clearError() {
+  document.getElementById('errorMsg').classList.remove('show');
+}
+
+function setLoading(show, status = '') {
+  const el = document.getElementById('loadingState');
+  el.classList.toggle('show', show);
+  if (status) document.getElementById('loadingStatus').innerHTML = status + '<span class="blink">_</span>';
+}
+
+function setAnalyseBtn(disabled) {
+  const btn = document.getElementById('analyseBtn');
+  btn.disabled = disabled;
+  btn.textContent = disabled ? 'ANALYSING...' : 'ANALYSE →';
+}
+
+async function startAnalysis() {
+  clearError();
+  const url = document.getElementById('spotifyUrl').value.trim();
+
+  if (!url) { setError('// ERROR: No URL provided'); return; }
+
+  const trackId = extractSpotifyId(url);
+  if (!trackId) { setError('// ERROR: Invalid Spotify track URL. Use format: open.spotify.com/track/...'); return; }
+
+  setAnalyseBtn(true);
+  setLoading(true, 'Initialising analysis engine');
+  document.getElementById('trackCard').classList.remove('show');
+  document.getElementById('analysisOutput').classList.remove('show');
+  document.getElementById('analysisOutput').innerHTML = '';
+  document.getElementById('newAnalysisBtn').classList.remove('show');
+
+  // Populate track card with what we know (Claude will fill in the rest)
+  const titleEl = document.getElementById('trackTitle');
+  const artistEl = document.getElementById('trackArtist');
+  const artEl = document.getElementById('trackArt');
+  const badgesEl = document.getElementById('trackBadges');
+
+  titleEl.textContent = 'Identifying track…';
+  artistEl.textContent = trackId;
+  artEl.style.display = 'none';
+
+  badgesEl.innerHTML = `
+    <span class="badge badge-green">SPOTIFY</span>
+    <span class="badge badge-purple">AI ANALYSIS</span>
+    <span class="badge badge-red">DEEP SCAN</span>
+  `;
+
+  document.getElementById('trackCard').classList.add('show');
+
+  // Go straight to Claude — it knows most Spotify tracks by ID or URL
+  setLoading(true, 'Running deep frequency analysis');
+
+  const prompt = buildPrompt(url, trackId);
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: CLAUDE_MODEL,
+        max_tokens: 1000,
+        messages: [{ role: "user", content: prompt }]
+      })
+    });
+
+    if (!response.ok) throw new Error(`API error: ${response.status}`);
+    const data = await response.json();
+    const raw = data.content.map(b => b.text || '').join('');
+    const clean = raw.replace(/```json|```/g, '').trim();
+
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch {
+      throw new Error('Failed to parse analysis response');
+    }
+
+    setLoading(false);
+
+    // Update track card with identified track info
+    if (parsed.track_name) document.getElementById('trackTitle').textContent = parsed.track_name;
+    if (parsed.artist_name) document.getElementById('trackArtist').textContent = parsed.artist_name;
+
+    renderAnalysis(parsed);
+  } catch (err) {
+    setLoading(false);
+    setAnalyseBtn(false);
+    setError(`// ERROR: ${err.message}`);
+  }
+}
+
+function buildPrompt(url, trackId) {
+  return `You are a world-class music analyst with deep knowledge of music theory, production, and song structure.
+
+The user has provided this Spotify track URL: ${url}
+Spotify Track ID: ${trackId}
+
+First, identify the track from the Spotify URL/ID using your training knowledge. Then provide a laser-precise expert breakdown.
+
+Return ONLY a valid JSON object (no markdown, no extra text) in this exact schema:
+
+{
+  "track_name": "The actual song title",
+  "artist_name": "The actual artist name",
+  "stats": {
+    "bpm": "estimated BPM or range (e.g. 128 or 95-100)",
+    "key": "musical key (e.g. A minor, F# major)",
+    "time_sig": "time signature (e.g. 4/4)",
+    "duration": "track duration (e.g. 3:42)"
+  },
+  "structure": [
+    {
+      "timestamp": "0:00",
+      "section": "INTRO",
+      "description": "Detailed description of what happens musically - instrumentation, texture, energy, production elements",
+      "tags": ["sparse", "building", "synth pad"]
+    }
+  ],
+  "melody": {
+    "overview": "2-3 sentence expert analysis of the melodic content, vocal style, motifs, hooks, and how melody relates to the overall composition",
+    "key_moments": "Describe 2-3 specific melodic highlights or techniques used"
+  },
+  "production": {
+    "overview": "2-3 sentence expert breakdown of the production style, mixing approach, notable sounds, layers, and sonic signature",
+    "signature_elements": "Describe the 2-3 most distinctive production elements"
+  },
+  "vibe": {
+    "primary_mood": "Single evocative word or phrase (e.g. Melancholic Defiance)",
+    "energy": 75,
+    "danceability": 60,
+    "tension": 40,
+    "emotional_arc": "Describe the emotional journey of the track from start to finish in 2 sentences",
+    "best_listened": "Describe the ideal listening context/setting for this track"
+  },
+  "verdict": "1-2 sentence sharp editorial take on this track - what makes it work or not work, its place in the artist's catalogue or genre"
+}
+
+Important:
+- If you can identify the track, provide real precise data. If you cannot identify it from the ID, set track_name to "Unrecognised Track" and artist_name to "Unknown Artist" but still populate all fields with plausible analysis based on any genre/context clues from the URL.
+- Structure array should have 6-10 sections covering the full track with realistic timestamps
+- Tags in structure should be specific musical descriptors (3-5 per section)
+- Energy/danceability/tension are 0-100 integers
+- Be specific, precise, use proper music terminology
+- Pure JSON only, zero preamble or postamble`;
+}
+
+function renderAnalysis(data) {
+  const out = document.getElementById('analysisOutput');
+  out.innerHTML = '';
+
+  // Stats row
+  if (data.stats) {
+    const s = data.stats;
+    let delay = 0;
+    out.innerHTML += `
+      <div class="section-header">
+        <div class="section-tag">Signal Stats</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="stats-row">
+        ${[['BPM', s.bpm], ['KEY', s.key], ['TIME', s.time_sig], ['DURATION', s.duration]].map(([k,v], i) => `
+          <div class="stat-cell" style="animation-delay:${i*0.08}s">
+            <span class="stat-val">${v || '—'}</span>
+            <span class="stat-key">${k}</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Structure / Timeline
+  if (data.structure && data.structure.length) {
+    out.innerHTML += `
+      <div class="section-header">
+        <div class="section-tag">Structure Timeline</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="timeline">
+        ${data.structure.map((seg, i) => `
+          <div class="timeline-item" style="animation-delay:${0.05 + i*0.07}s">
+            <div class="ts">${seg.timestamp || '—'}</div>
+            <div class="segment">
+              <div class="seg-name">${seg.section || '—'}</div>
+              <div class="seg-desc">${seg.description || ''}</div>
+              ${seg.tags && seg.tags.length ? `
+                <div class="seg-tags">
+                  ${seg.tags.map(t => `<span class="seg-tag">${t}</span>`).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  // Melody
+  if (data.melody) {
+    out.innerHTML += `
+      <div class="section-header">
+        <div class="section-tag">Melody & Hooks</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="prose-block accent3" style="animation-delay:0.1s">
+        <strong>Overview —</strong> ${data.melody.overview || ''}
+      </div>
+      <div class="prose-block accent3" style="animation-delay:0.2s">
+        <strong>Key Moments —</strong> ${data.melody.key_moments || ''}
+      </div>
+    `;
+  }
+
+  // Production
+  if (data.production) {
+    out.innerHTML += `
+      <div class="section-header">
+        <div class="section-tag">Production Analysis</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="prose-block" style="animation-delay:0.1s">
+        <strong>Overview —</strong> ${data.production.overview || ''}
+      </div>
+      <div class="prose-block" style="animation-delay:0.2s">
+        <strong>Signature Elements —</strong> ${data.production.signature_elements || ''}
+      </div>
+    `;
+  }
+
+  // Vibe
+  if (data.vibe) {
+    const v = data.vibe;
+    out.innerHTML += `
+      <div class="section-header">
+        <div class="section-tag">Vibe Profile</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="vibe-grid">
+        ${[
+          ['Primary Mood', v.primary_mood, null],
+          ['Energy Level', v.energy + '/100', v.energy],
+          ['Danceability', v.danceability + '/100', v.danceability],
+          ['Tension', v.tension + '/100', v.tension]
+        ].map(([label, val, pct], i) => `
+          <div class="vibe-item" style="animation-delay:${i*0.08}s">
+            <div class="vibe-label">${label}</div>
+            <div class="vibe-value">${val}</div>
+            ${pct !== null ? `
+              <div class="vibe-bar-track">
+                <div class="vibe-bar-fill" data-width="${pct}"></div>
+              </div>
+            ` : ''}
+          </div>
+        `).join('')}
+      </div>
+      <div class="prose-block accent2" style="animation-delay:0.1s; margin-top: 12px;">
+        <strong>Emotional Arc —</strong> ${v.emotional_arc || ''}
+      </div>
+      <div class="prose-block accent2" style="animation-delay:0.2s">
+        <strong>Best Listened —</strong> ${v.best_listened || ''}
+      </div>
+    `;
+  }
+
+  // Verdict
+  if (data.verdict) {
+    out.innerHTML += `
+      <div class="section-header">
+        <div class="section-tag">Verdict</div>
+        <div class="section-line"></div>
+      </div>
+      <div class="prose-block accent" style="animation-delay:0.1s; font-size: 14px; line-height: 1.8; color: var(--text);">
+        ${data.verdict}
+      </div>
+    `;
+  }
+
+  out.classList.add('show');
+  document.getElementById('newAnalysisBtn').classList.add('show');
+  setAnalyseBtn(false);
+
+  // Trigger vibe bar animations
+  setTimeout(() => {
+    document.querySelectorAll('.vibe-bar-fill').forEach(bar => {
+      bar.style.width = bar.dataset.width + '%';
+    });
+  }, 300);
+
+  // Scroll to output
+  setTimeout(() => {
+    document.getElementById('trackCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 100);
+}
+
+function resetTool() {
+  document.getElementById('spotifyUrl').value = '';
+  document.getElementById('trackCard').classList.remove('show');
+  document.getElementById('analysisOutput').classList.remove('show');
+  document.getElementById('analysisOutput').innerHTML = '';
+  document.getElementById('newAnalysisBtn').classList.remove('show');
+  clearError();
+  document.getElementById('spotifyUrl').focus();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Enter key support
+document.getElementById('spotifyUrl').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') startAnalysis();
+});
+</script>
+</body>
+</html>
