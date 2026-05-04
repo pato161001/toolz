@@ -3,18 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FREQ — Song Anatomy</title>
+<title>FREQ — Song Anatomy Engine</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Unbounded:wght@200;400;700;900&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@200;400;700;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --bg: #050508;
     --surface: #0d0d14;
+    --surface-2: #14141f;
     --border: #1e1e2e;
+    --border-light: #2a2a3e;
     --accent: #00ff9d;
     --accent2: #ff3c6e;
     --accent3: #7c6dff;
     --text: #e8e8f0;
+    --text-dim: #9090aa;
     --muted: #555568;
     --mono: 'Space Mono', monospace;
     --display: 'Unbounded', sans-serif;
@@ -31,188 +35,61 @@
     position: relative;
   }
 
-  /* Scanline overlay */
   body::before {
     content: '';
     position: fixed;
     inset: 0;
-    background: repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0,0,0,0.03) 2px,
-      rgba(0,0,0,0.03) 4px
-    );
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px);
     pointer-events: none;
     z-index: 1000;
   }
 
-  /* Grid bg */
   body::after {
     content: '';
     position: fixed;
     inset: 0;
-    background-image:
-      linear-gradient(rgba(0,255,157,0.03) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(0,255,157,0.03) 1px, transparent 1px);
+    background-image: linear-gradient(rgba(0,255,157,0.025) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,157,0.025) 1px, transparent 1px);
     background-size: 60px 60px;
     pointer-events: none;
     z-index: 0;
   }
 
-  .wrapper {
-    position: relative;
-    z-index: 1;
-    max-width: 860px;
-    margin: 0 auto;
-    padding: 48px 24px 80px;
-  }
+  .wrapper { position: relative; z-index: 1; max-width: 880px; margin: 0 auto; padding: 48px 24px 80px; }
 
-  /* Header */
-  header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    margin-bottom: 56px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 24px;
-  }
+  header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 56px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .logo { font-family: var(--display); font-weight: 900; font-size: clamp(28px, 5vw, 44px); letter-spacing: -0.03em; line-height: 1; color: var(--accent); }
+  .logo span { display: block; font-weight: 200; font-size: 10px; letter-spacing: 0.3em; color: var(--muted); margin-top: 6px; text-transform: uppercase; font-family: var(--mono); }
+  .version { font-size: 10px; color: var(--muted); letter-spacing: 0.2em; text-align: right; padding-top: 4px; line-height: 1.6; }
+  .version b { color: var(--accent); font-weight: 700; }
 
-  .logo {
-    font-family: var(--display);
-    font-weight: 900;
-    font-size: clamp(28px, 5vw, 44px);
-    letter-spacing: -0.03em;
-    line-height: 1;
-    color: var(--accent);
-    text-shadow: 0 0 40px rgba(0,255,157,0.3);
-  }
-
-  .logo span {
-    display: block;
-    font-weight: 200;
-    font-size: 10px;
-    letter-spacing: 0.3em;
-    color: var(--muted);
-    margin-top: 6px;
-    text-transform: uppercase;
-  }
-
-  .version {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.2em;
-    text-align: right;
-    padding-top: 4px;
-  }
-
-  /* Input zone */
-  .input-zone {
-    margin-bottom: 40px;
-  }
-
-  .input-label {
-    font-size: 10px;
-    letter-spacing: 0.25em;
-    color: var(--muted);
-    text-transform: uppercase;
-    margin-bottom: 10px;
-    display: block;
-  }
-
-  .input-row {
-    display: flex;
-    gap: 12px;
-    align-items: stretch;
-  }
-
+  .input-zone { margin-bottom: 40px; }
+  .input-label { font-size: 10px; letter-spacing: 0.25em; color: var(--muted); text-transform: uppercase; margin-bottom: 10px; display: block; }
+  .input-row { display: flex; gap: 12px; }
   .url-input {
-    flex: 1;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    color: var(--text);
-    font-family: var(--mono);
-    font-size: 13px;
-    padding: 14px 18px;
-    outline: none;
-    transition: border-color 0.2s, box-shadow 0.2s;
-    letter-spacing: 0.02em;
+    flex: 1; background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    font-family: var(--mono); font-size: 13px; padding: 14px 18px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s; letter-spacing: 0.02em;
   }
-
   .url-input::placeholder { color: var(--muted); }
-  .url-input:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent), 0 0 20px rgba(0,255,157,0.1);
-  }
+  .url-input:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 
   .analyse-btn {
-    background: var(--accent);
-    color: #000;
-    border: none;
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 14px 28px;
-    cursor: pointer;
-    transition: all 0.15s;
-    white-space: nowrap;
-    position: relative;
-    overflow: hidden;
+    background: var(--accent); color: #000; border: none;
+    font-family: var(--display); font-weight: 700; font-size: 11px; letter-spacing: 0.15em;
+    text-transform: uppercase; padding: 14px 28px; cursor: pointer; transition: all 0.15s;
+    white-space: nowrap; position: relative; overflow: hidden;
   }
-
-  .analyse-btn::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: rgba(255,255,255,0.2);
-    transform: translateX(-100%);
-    transition: transform 0.2s;
-  }
-
-  .analyse-btn:hover::before { transform: translateX(0); }
   .analyse-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,255,157,0.4); }
   .analyse-btn:active { transform: translateY(0); }
-  .analyse-btn:disabled {
-    background: var(--border);
-    color: var(--muted);
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
+  .analyse-btn:disabled { background: var(--border); color: var(--muted); cursor: not-allowed; transform: none; box-shadow: none; }
 
-  /* Error */
-  .error-msg {
-    font-size: 11px;
-    color: var(--accent2);
-    margin-top: 10px;
-    letter-spacing: 0.05em;
-    display: none;
-  }
+  .error-msg { font-size: 11px; color: var(--accent2); margin-top: 10px; letter-spacing: 0.05em; display: none; }
   .error-msg.show { display: block; }
 
-  /* Loading */
-  .loading-state {
-    display: none;
-    padding: 48px 0;
-    text-align: center;
-  }
+  .loading-state { display: none; padding: 48px 0; text-align: center; }
   .loading-state.show { display: block; }
-
-  .loader-bars {
-    display: inline-flex;
-    gap: 4px;
-    margin-bottom: 20px;
-  }
-
-  .loader-bars span {
-    display: block;
-    width: 3px;
-    background: var(--accent);
-    animation: barPulse 1s ease-in-out infinite;
-  }
-
+  .loader-bars { display: inline-flex; gap: 4px; margin-bottom: 20px; align-items: flex-end; }
+  .loader-bars span { display: block; width: 3px; background: var(--accent); animation: barPulse 1s ease-in-out infinite; }
   .loader-bars span:nth-child(1) { height: 20px; animation-delay: 0s; }
   .loader-bars span:nth-child(2) { height: 36px; animation-delay: 0.1s; }
   .loader-bars span:nth-child(3) { height: 28px; animation-delay: 0.2s; }
@@ -220,352 +97,85 @@
   .loader-bars span:nth-child(5) { height: 32px; animation-delay: 0.4s; }
   .loader-bars span:nth-child(6) { height: 20px; animation-delay: 0.5s; }
   .loader-bars span:nth-child(7) { height: 38px; animation-delay: 0.6s; }
-
-  @keyframes barPulse {
-    0%, 100% { opacity: 0.2; transform: scaleY(0.5); }
-    50% { opacity: 1; transform: scaleY(1); }
-  }
-
-  .loading-text {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-
-  .loading-status {
-    font-size: 12px;
-    color: var(--accent);
-    margin-top: 6px;
-    min-height: 18px;
-  }
-
-  /* Track card */
-  .track-card {
-    display: none;
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 24px;
-    margin-bottom: 32px;
-    align-items: center;
-    gap: 20px;
-    position: relative;
-    overflow: hidden;
-  }
-  .track-card.show { display: flex; }
-  .track-card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--accent);
-  }
-
-  .track-art {
-    width: 72px;
-    height: 72px;
-    object-fit: cover;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-  }
-
-  .track-info { flex: 1; min-width: 0; }
-
-  .track-title {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 18px;
-    letter-spacing: -0.02em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 4px;
-  }
-
-  .track-artist {
-    font-size: 12px;
-    color: var(--muted);
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    margin-bottom: 8px;
-  }
-
-  .track-badges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  .badge {
-    font-size: 9px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border: 1px solid;
-  }
-
-  .badge-green { border-color: var(--accent); color: var(--accent); }
-  .badge-red { border-color: var(--accent2); color: var(--accent2); }
-  .badge-purple { border-color: var(--accent3); color: var(--accent3); }
-
-  /* Analysis output */
-  .analysis-output {
-    display: none;
-  }
-  .analysis-output.show { display: block; }
-
-  /* Section blocks */
-  .section-header {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-    margin-top: 40px;
-  }
-
-  .section-tag {
-    font-size: 9px;
-    font-family: var(--display);
-    font-weight: 700;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 4px 10px;
-    background: var(--accent);
-    color: #000;
-  }
-
-  .section-line {
-    flex: 1;
-    height: 1px;
-    background: var(--border);
-  }
-
-  /* Timeline */
-  .timeline {
-    position: relative;
-    padding-left: 0;
-  }
-
-  .timeline-item {
-    display: grid;
-    grid-template-columns: 80px 1fr;
-    gap: 0;
-    margin-bottom: 2px;
-    animation: fadeSlideIn 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  @keyframes fadeSlideIn {
-    from { opacity: 0; transform: translateX(-8px); }
-    to { opacity: 1; transform: translateX(0); }
-  }
-
-  .ts {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--accent);
-    padding: 14px 16px 14px 0;
-    border-right: 1px solid var(--border);
-    text-align: right;
-    white-space: nowrap;
-    letter-spacing: 0.05em;
-    position: relative;
-  }
-
-  .ts::after {
-    content: '';
-    position: absolute;
-    right: -4px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 7px;
-    height: 7px;
-    background: var(--accent);
-    border-radius: 50%;
-  }
-
-  .segment {
-    padding: 12px 0 12px 20px;
-  }
-
-  .seg-name {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 13px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    margin-bottom: 5px;
-    color: var(--text);
-  }
-
-  .seg-desc {
-    font-size: 12px;
-    color: #9090aa;
-    line-height: 1.6;
-    letter-spacing: 0.01em;
-  }
-
-  .seg-tags {
-    display: flex;
-    gap: 6px;
-    flex-wrap: wrap;
-    margin-top: 6px;
-  }
-
-  .seg-tag {
-    font-size: 9px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    padding: 2px 7px;
-    background: rgba(124,109,255,0.15);
-    color: var(--accent3);
-    border: 1px solid rgba(124,109,255,0.25);
-  }
-
-  /* Prose sections */
-  .prose-block {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--accent3);
-    padding: 20px 24px;
-    margin-bottom: 8px;
-    font-size: 13px;
-    line-height: 1.75;
-    color: #b0b0c8;
-    letter-spacing: 0.02em;
-    animation: fadeSlideIn 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  .prose-block strong {
-    color: var(--text);
-    font-weight: 700;
-  }
-
-  .prose-block.accent2 { border-left-color: var(--accent2); }
-  .prose-block.accent { border-left-color: var(--accent); }
-
-  /* Vibe meter */
-  .vibe-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-  }
-
-  .vibe-item {
-    background: var(--surface);
-    border: 1px solid var(--border);
-    padding: 16px 20px;
-    animation: fadeSlideIn 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  .vibe-label {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 8px;
-  }
-
-  .vibe-value {
-    font-family: var(--display);
-    font-weight: 700;
-    font-size: 15px;
-    letter-spacing: -0.01em;
-    margin-bottom: 8px;
-  }
-
-  .vibe-bar-track {
-    height: 2px;
-    background: var(--border);
-    width: 100%;
-  }
-
-  .vibe-bar-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent3), var(--accent));
-    width: 0%;
-    transition: width 1s ease 0.5s;
-  }
-
-  /* Key/BPM display */
-  .stats-row {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1px;
-    background: var(--border);
-    border: 1px solid var(--border);
-    margin-bottom: 8px;
-  }
-
-  .stat-cell {
-    background: var(--surface);
-    padding: 16px;
-    text-align: center;
-    animation: fadeSlideIn 0.4s ease forwards;
-    opacity: 0;
-  }
-
-  .stat-val {
-    font-family: var(--display);
-    font-weight: 900;
-    font-size: 22px;
-    letter-spacing: -0.03em;
-    color: var(--accent);
-    display: block;
-    margin-bottom: 4px;
-  }
-
-  .stat-key {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-  }
-
-  /* Footer */
-  .footer {
-    margin-top: 60px;
-    padding-top: 20px;
-    border-top: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .footer-note {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-  }
-
-  .new-analysis-btn {
-    font-family: var(--mono);
-    font-size: 11px;
-    letter-spacing: 0.1em;
-    color: var(--accent);
-    background: none;
-    border: 1px solid var(--accent);
-    padding: 8px 16px;
-    cursor: pointer;
-    transition: all 0.15s;
-    display: none;
-  }
-  .new-analysis-btn.show { display: block; }
-  .new-analysis-btn:hover { background: var(--accent); color: #000; }
-
-  /* Cursor blink in loading */
+  @keyframes barPulse { 0%,100%{opacity:0.2;transform:scaleY(0.5)} 50%{opacity:1;transform:scaleY(1)} }
+  .loading-text { font-size: 11px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
+  .loading-status { font-size: 12px; color: var(--accent); margin-top: 6px; min-height: 18px; }
   .blink { animation: blink 1s step-end infinite; }
   @keyframes blink { 50% { opacity: 0; } }
 
-  /* Responsive */
-  @media (max-width: 600px) {
-    .vibe-grid { grid-template-columns: 1fr; }
+  .track-card { display: none; background: var(--surface); border: 1px solid var(--border); padding: 24px; margin-bottom: 32px; align-items: center; gap: 20px; position: relative; overflow: hidden; }
+  .track-card.show { display: flex; }
+  .track-card::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+  .track-art { width: 80px; height: 80px; object-fit: cover; flex-shrink: 0; border: 1px solid var(--border); }
+  .track-art-placeholder { width: 80px; height: 80px; background: var(--surface-2); border: 1px solid var(--border); flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .track-info { flex: 1; min-width: 0; }
+  .track-title { font-family: var(--display); font-weight: 700; font-size: 19px; letter-spacing: -0.02em; margin-bottom: 4px; line-height: 1.25; }
+  .track-artist { font-size: 12px; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+  .track-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+  .badge { font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; }
+  .badge-green { border-color: var(--accent); color: var(--accent); }
+  .badge-red { border-color: var(--accent2); color: var(--accent2); }
+  .badge-purple { border-color: var(--accent3); color: var(--accent3); }
+  .spotify-link { font-size: 10px; color: var(--accent); text-decoration: none; letter-spacing: 0.1em; margin-top: 6px; display: inline-block; opacity: 0.7; }
+  .spotify-link:hover { opacity: 1; }
+
+  .analysis-output { display: none; }
+  .analysis-output.show { display: block; }
+  .section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; margin-top: 40px; }
+  .section-tag { font-size: 9px; font-family: var(--display); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase; padding: 4px 10px; background: var(--accent); color: #000; }
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+
+  .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--border); border: 1px solid var(--border); margin-bottom: 8px; }
+  .stat-cell { background: var(--surface); padding: 18px 12px; text-align: center; animation: fadeSlideIn 0.5s ease forwards; opacity: 0; }
+  .stat-val { font-family: var(--display); font-weight: 900; font-size: 22px; letter-spacing: -0.03em; color: var(--accent); display: block; margin-bottom: 4px; word-break: break-all; }
+  .stat-key { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+  @keyframes fadeSlideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  .features-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .feature-item { background: var(--surface); border: 1px solid var(--border); padding: 16px 18px; animation: fadeSlideIn 0.5s ease forwards; opacity: 0; }
+  .feature-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .feature-label { font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-dim); }
+  .feature-value { font-family: var(--display); font-weight: 700; font-size: 14px; color: var(--accent); }
+  .feature-bar { height: 4px; background: var(--border); position: relative; overflow: hidden; }
+  .feature-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent3), var(--accent)); width: 0%; transition: width 1.2s cubic-bezier(0.65, 0, 0.35, 1); }
+  .feature-desc { font-size: 10px; color: var(--muted); margin-top: 8px; letter-spacing: 0.02em; line-height: 1.5; }
+
+  .prose-block { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent3); padding: 20px 24px; margin-bottom: 8px; font-size: 13px; line-height: 1.75; color: var(--text-dim); letter-spacing: 0.02em; animation: fadeSlideIn 0.5s ease forwards; opacity: 0; }
+  .prose-block strong { color: var(--text); font-weight: 700; }
+  .prose-block.accent { border-left-color: var(--accent); }
+  .prose-block.accent2 { border-left-color: var(--accent2); }
+
+  .mood-canvas { background: var(--surface); border: 1px solid var(--border); padding: 24px; margin-bottom: 8px; position: relative; overflow: hidden; }
+  .mood-grid { position: relative; width: 100%; aspect-ratio: 1.6 / 1; max-width: 480px; margin: 0 auto; border: 1px solid var(--border); }
+  .mood-axis-label { position: absolute; font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
+  .mood-axis-label.top { top: 8px; left: 50%; transform: translateX(-50%); }
+  .mood-axis-label.bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
+  .mood-axis-label.left { top: 50%; left: 8px; transform: translateY(-50%) rotate(-90deg); transform-origin: left center; }
+  .mood-axis-label.right { top: 50%; right: 8px; transform: translateY(-50%) rotate(90deg); transform-origin: right center; }
+  .mood-cross-h, .mood-cross-v { position: absolute; background: var(--border); }
+  .mood-cross-h { left: 0; right: 0; top: 50%; height: 1px; }
+  .mood-cross-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+  .mood-quad-label { position: absolute; font-size: 9px; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.5; }
+  .mood-dot { position: absolute; width: 16px; height: 16px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 20px var(--accent), 0 0 40px rgba(0,255,157,0.3); transform: translate(-50%, -50%); transition: left 1.5s ease, top 1.5s ease; z-index: 2; }
+  .mood-dot::before { content: ''; position: absolute; inset: -4px; border: 1px solid var(--accent); border-radius: 50%; animation: dotPulse 2s ease-in-out infinite; }
+  @keyframes dotPulse { 0%, 100% { transform: scale(1); opacity: 0.6; } 50% { transform: scale(1.6); opacity: 0; } }
+  .mood-readout { font-family: var(--display); font-weight: 700; font-size: 14px; text-align: center; margin-top: 16px; letter-spacing: -0.01em; color: var(--text); }
+  .mood-readout span { color: var(--accent); }
+
+  .footer { margin-top: 60px; padding-top: 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .footer-note { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; }
+  .new-analysis-btn { font-family: var(--mono); font-size: 11px; letter-spacing: 0.1em; color: var(--accent); background: none; border: 1px solid var(--accent); padding: 8px 16px; cursor: pointer; transition: all 0.15s; display: none; }
+  .new-analysis-btn.show { display: block; }
+  .new-analysis-btn:hover { background: var(--accent); color: #000; }
+
+  @media (max-width: 640px) {
+    .wrapper { padding: 32px 16px 60px; }
+    .features-grid { grid-template-columns: 1fr; }
     .stats-row { grid-template-columns: 1fr 1fr; }
     .input-row { flex-direction: column; }
     .analyse-btn { width: 100%; }
-    .track-card { flex-direction: column; }
+    .track-card { flex-direction: column; align-items: flex-start; text-align: left; }
+    .track-art, .track-art-placeholder { width: 100%; height: 200px; }
   }
 </style>
 </head>
@@ -574,386 +184,366 @@
 
   <header>
     <div>
-      <div class="logo">FREQ<span>Song Anatomy Engine v1.0</span></div>
+      <div class="logo">FREQ<span>Song Anatomy Engine v2.0</span></div>
     </div>
-    <div class="version">POWERED BY<br>CLAUDE AI</div>
+    <div class="version">SPOTIFY × <b>RECCOBEATS</b><br>NO AUTH · NO LIMITS</div>
   </header>
 
   <div class="input-zone">
-    <label class="input-label" for="spotifyUrl">// Paste Spotify track URL</label>
+    <label class="input-label" for="spotifyUrl">// Paste any Spotify track URL</label>
     <div class="input-row">
-      <input
-        type="text"
-        id="spotifyUrl"
-        class="url-input"
-        placeholder="https://open.spotify.com/track/..."
-        autocomplete="off"
-        spellcheck="false"
-      />
-      <button class="analyse-btn" id="analyseBtn" onclick="startAnalysis()">ANALYSE →</button>
+      <input type="text" id="spotifyUrl" class="url-input" placeholder="https://open.spotify.com/track/..." autocomplete="off" spellcheck="false" />
+      <button class="analyse-btn" id="analyseBtn">ANALYSE →</button>
     </div>
     <div class="error-msg" id="errorMsg"></div>
   </div>
 
-  <!-- Loading -->
   <div class="loading-state" id="loadingState">
-    <div class="loader-bars">
-      <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
-    </div>
-    <div class="loading-text">ANALYSING SIGNAL</div>
-    <div class="loading-status" id="loadingStatus">Fetching track data<span class="blink">_</span></div>
+    <div class="loader-bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <div class="loading-text">SCANNING SIGNAL</div>
+    <div class="loading-status" id="loadingStatus">Initialising<span class="blink">_</span></div>
   </div>
 
-  <!-- Track card -->
   <div class="track-card" id="trackCard">
-    <img class="track-art" id="trackArt" src="" alt="Album art">
+    <img class="track-art" id="trackArt" src="" alt="Album art" style="display:none">
+    <div class="track-art-placeholder" id="trackArtPlaceholder">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="4" stroke="#555568" stroke-width="1.5"/>
+        <circle cx="12" cy="12" r="9" stroke="#1e1e2e" stroke-width="1.5"/>
+      </svg>
+    </div>
     <div class="track-info">
       <div class="track-title" id="trackTitle">—</div>
       <div class="track-artist" id="trackArtist">—</div>
       <div class="track-badges" id="trackBadges"></div>
+      <a class="spotify-link" id="spotifyLink" target="_blank" rel="noopener" style="display:none">↗ OPEN IN SPOTIFY</a>
     </div>
   </div>
 
-  <!-- Analysis -->
   <div class="analysis-output" id="analysisOutput"></div>
 
   <div class="footer">
-    <div class="footer-note">FREQ © 2025 — Analysis is AI-generated interpretation</div>
-    <button class="new-analysis-btn" id="newAnalysisBtn" onclick="resetTool()">+ NEW ANALYSIS</button>
+    <div class="footer-note">FREQ © 2025 — Audio data via ReccoBeats API</div>
+    <button class="new-analysis-btn" id="newAnalysisBtn">+ NEW ANALYSIS</button>
   </div>
-
 </div>
 
 <script>
-const CLAUDE_MODEL = "claude-sonnet-4-20250514";
+const RECCOBEATS_BASE = 'https://api.reccobeats.com/v1';
+const SPOTIFY_OEMBED = 'https://open.spotify.com/oembed';
 
-let currentTrackData = null;
+const PITCH_CLASSES = ['C', 'C\u266F/D\u266D', 'D', 'D\u266F/E\u266D', 'E', 'F', 'F\u266F/G\u266D', 'G', 'G\u266F/A\u266D', 'A', 'A\u266F/B\u266D', 'B'];
+const MODE_NAMES = ['Minor', 'Major'];
 
-function extractSpotifyId(url) {
-  const patterns = [
-    /spotify\.com\/track\/([a-zA-Z0-9]+)/,
-    /spotify:track:([a-zA-Z0-9]+)/
-  ];
-  for (const p of patterns) {
-    const m = url.match(p);
-    if (m) return m[1];
-  }
-  return null;
-}
+const $ = id => document.getElementById(id);
 
 function setError(msg) {
-  const el = document.getElementById('errorMsg');
-  el.textContent = msg;
-  el.classList.add('show');
+  const el = $('errorMsg');
+  if (msg) { el.textContent = msg; el.classList.add('show'); }
+  else { el.classList.remove('show'); }
+}
+function setLoading(show, status) {
+  $('loadingState').classList.toggle('show', !!show);
+  if (status) $('loadingStatus').innerHTML = status + '<span class="blink">_</span>';
+}
+function setBtnState(disabled) {
+  $('analyseBtn').disabled = disabled;
+  $('analyseBtn').textContent = disabled ? 'ANALYSING...' : 'ANALYSE \u2192';
 }
 
-function clearError() {
-  document.getElementById('errorMsg').classList.remove('show');
+function extractSpotifyId(url) {
+  const m = url.match(/(?:spotify\.com\/track\/|spotify:track:)([a-zA-Z0-9]+)/);
+  return m ? m[1] : null;
+}
+function msToTime(ms) {
+  const total = Math.floor(ms / 1000);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return m + ':' + s.toString().padStart(2, '0');
+}
+function pct(v) { return Math.round((v || 0) * 100); }
+
+async function fetchOembed(spotifyUrl) {
+  try {
+    const res = await fetch(SPOTIFY_OEMBED + '?url=' + encodeURIComponent(spotifyUrl));
+    if (!res.ok) return null;
+    return await res.json();
+  } catch { return null; }
 }
 
-function setLoading(show, status = '') {
-  const el = document.getElementById('loadingState');
-  el.classList.toggle('show', show);
-  if (status) document.getElementById('loadingStatus').innerHTML = status + '<span class="blink">_</span>';
+async function fetchReccoTrack(spotifyId) {
+  const res = await fetch(RECCOBEATS_BASE + '/track?ids=' + spotifyId);
+  if (!res.ok) throw new Error('Track lookup failed (' + res.status + ')');
+  const data = await res.json();
+  const tracks = data.content || data.tracks || (Array.isArray(data) ? data : []);
+  if (!tracks.length) throw new Error('Track not found in ReccoBeats database');
+  return tracks[0];
 }
 
-function setAnalyseBtn(disabled) {
-  const btn = document.getElementById('analyseBtn');
-  btn.disabled = disabled;
-  btn.textContent = disabled ? 'ANALYSING...' : 'ANALYSE →';
+async function fetchReccoFeatures(reccoId) {
+  const res = await fetch(RECCOBEATS_BASE + '/track/' + reccoId + '/audio-features');
+  if (!res.ok) throw new Error('Audio features unavailable (' + res.status + ')');
+  return await res.json();
+}
+
+function describeFeature(name, v) {
+  switch (name) {
+    case 'energy':
+      if (v < 0.3) return 'Calm, low intensity';
+      if (v < 0.6) return 'Moderate energy';
+      if (v < 0.8) return 'High energy, driving';
+      return 'Very intense, explosive';
+    case 'danceability':
+      if (v < 0.3) return 'Hard to dance to';
+      if (v < 0.6) return 'Some groove';
+      if (v < 0.8) return 'Highly danceable';
+      return 'Built for the floor';
+    case 'valence':
+      if (v < 0.3) return 'Dark, melancholic mood';
+      if (v < 0.5) return 'Bittersweet, moody';
+      if (v < 0.7) return 'Bright, positive';
+      return 'Euphoric, joyful';
+    case 'acousticness':
+      if (v < 0.2) return 'Fully electronic / produced';
+      if (v < 0.5) return 'Mostly electronic';
+      if (v < 0.8) return 'Largely acoustic';
+      return 'Pure acoustic';
+    case 'instrumentalness':
+      if (v < 0.2) return 'Vocal-driven track';
+      if (v < 0.5) return 'Mix of vocals & instruments';
+      if (v < 0.8) return 'Mostly instrumental';
+      return 'Pure instrumental';
+    case 'liveness':
+      if (v < 0.2) return 'Studio recording';
+      if (v < 0.5) return 'Studio with live feel';
+      if (v < 0.8) return 'Likely live recording';
+      return 'Definite live performance';
+    case 'speechiness':
+      if (v < 0.33) return 'Music-focused';
+      if (v < 0.66) return 'Mix of music & speech';
+      return 'Spoken-word heavy';
+    default: return '';
+  }
+}
+
+function describeMood(v, e) {
+  if (v >= 0.5 && e >= 0.5) return 'Euphoric / Energetic';
+  if (v >= 0.5 && e < 0.5)  return 'Peaceful / Content';
+  if (v < 0.5 && e >= 0.5)  return 'Tense / Aggressive';
+  return 'Melancholic / Sombre';
+}
+
+function tempoFeel(bpm) {
+  if (bpm < 70) return 'slow ballad pace';
+  if (bpm < 90) return 'mid-tempo groove';
+  if (bpm < 110) return 'steady walking pace';
+  if (bpm < 125) return 'club-friendly mid-tempo';
+  if (bpm < 140) return 'house / techno territory';
+  if (bpm < 160) return 'fast techno / DnB-adjacent';
+  if (bpm < 180) return 'high-tempo, hard techno range';
+  return 'hardcore / speedcore range';
+}
+
+function generateNarrative(features) {
+  const parts = [];
+  const tempo = features.tempo || 0;
+  const key = (typeof features.key === 'number' && features.key >= 0) ? PITCH_CLASSES[features.key] : '?';
+  const mode = (typeof features.mode === 'number') ? MODE_NAMES[features.mode] : '';
+
+  parts.push('<strong>Tempo &amp; Key \u2014</strong> Sits at <strong>' + Math.round(tempo) + ' BPM</strong> in ' + key + (mode ? ' ' + mode : '') + ', placing it in ' + tempoFeel(tempo) + '.');
+
+  const e = features.energy, d = features.danceability, v = features.valence;
+  parts.push('<strong>Sonic Profile \u2014</strong> Energy reads <strong>' + pct(e) + '%</strong>, danceability <strong>' + pct(d) + '%</strong>, valence <strong>' + pct(v) + '%</strong>. ' + describeMood(v, e) + '.');
+
+  if (features.acousticness !== undefined) {
+    parts.push('<strong>Production Texture \u2014</strong> ' + describeFeature('acousticness', features.acousticness) + '; ' + describeFeature('instrumentalness', features.instrumentalness || 0).toLowerCase() + '.');
+  }
+
+  if (features.liveness !== undefined && features.liveness > 0.6) {
+    parts.push('<strong>Performance \u2014</strong> Liveness of ' + pct(features.liveness) + '% suggests this is likely a live recording or has a strong live atmosphere.');
+  }
+
+  return parts;
 }
 
 async function startAnalysis() {
-  clearError();
-  const url = document.getElementById('spotifyUrl').value.trim();
+  setError('');
+  const url = $('spotifyUrl').value.trim();
+  if (!url) return setError('// ERROR: No URL provided');
 
-  if (!url) { setError('// ERROR: No URL provided'); return; }
+  const spotifyId = extractSpotifyId(url);
+  if (!spotifyId) return setError('// ERROR: Invalid Spotify track URL. Format: open.spotify.com/track/...');
 
-  const trackId = extractSpotifyId(url);
-  if (!trackId) { setError('// ERROR: Invalid Spotify track URL. Use format: open.spotify.com/track/...'); return; }
+  setBtnState(true);
+  $('trackCard').classList.remove('show');
+  $('analysisOutput').classList.remove('show');
+  $('analysisOutput').innerHTML = '';
+  $('newAnalysisBtn').classList.remove('show');
 
-  setAnalyseBtn(true);
-  setLoading(true, 'Initialising analysis engine');
-  document.getElementById('trackCard').classList.remove('show');
-  document.getElementById('analysisOutput').classList.remove('show');
-  document.getElementById('analysisOutput').innerHTML = '';
-  document.getElementById('newAnalysisBtn').classList.remove('show');
-
-  // Populate track card with what we know (Claude will fill in the rest)
-  const titleEl = document.getElementById('trackTitle');
-  const artistEl = document.getElementById('trackArtist');
-  const artEl = document.getElementById('trackArt');
-  const badgesEl = document.getElementById('trackBadges');
-
-  titleEl.textContent = 'Identifying track…';
-  artistEl.textContent = trackId;
-  artEl.style.display = 'none';
-
-  badgesEl.innerHTML = `
-    <span class="badge badge-green">SPOTIFY</span>
-    <span class="badge badge-purple">AI ANALYSIS</span>
-    <span class="badge badge-red">DEEP SCAN</span>
-  `;
-
-  document.getElementById('trackCard').classList.add('show');
-
-  // Go straight to Claude — it knows most Spotify tracks by ID or URL
-  setLoading(true, 'Running deep frequency analysis');
-
-  const prompt = buildPrompt(url, trackId);
+  setLoading(true, 'Fetching track metadata');
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: CLAUDE_MODEL,
-        max_tokens: 1000,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
+    const cleanUrl = 'https://open.spotify.com/track/' + spotifyId;
+    const [oembed, reccoTrack] = await Promise.all([
+      fetchOembed(cleanUrl),
+      fetchReccoTrack(spotifyId)
+    ]);
 
-    if (!response.ok) throw new Error(`API error: ${response.status}`);
-    const data = await response.json();
-    const raw = data.content.map(b => b.text || '').join('');
-    const clean = raw.replace(/```json|```/g, '').trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(clean);
-    } catch {
-      throw new Error('Failed to parse analysis response');
-    }
+    setLoading(true, 'Extracting audio features');
+    const features = await fetchReccoFeatures(reccoTrack.id);
 
     setLoading(false);
+    renderTrack(reccoTrack, oembed, cleanUrl);
+    renderAnalysis(reccoTrack, features);
 
-    // Update track card with identified track info
-    if (parsed.track_name) document.getElementById('trackTitle').textContent = parsed.track_name;
-    if (parsed.artist_name) document.getElementById('trackArtist').textContent = parsed.artist_name;
-
-    renderAnalysis(parsed);
   } catch (err) {
     setLoading(false);
-    setAnalyseBtn(false);
-    setError(`// ERROR: ${err.message}`);
+    setBtnState(false);
+    setError('// ERROR: ' + (err.message || 'Analysis failed. Track may not be in the ReccoBeats database.'));
   }
 }
 
-function buildPrompt(url, trackId) {
-  return `You are a world-class music analyst with deep knowledge of music theory, production, and song structure.
+function renderTrack(track, oembed, spotifyUrl) {
+  const titleEl = $('trackTitle');
+  const artistEl = $('trackArtist');
+  const artEl = $('trackArt');
+  const placeholderEl = $('trackArtPlaceholder');
+  const badgesEl = $('trackBadges');
+  const linkEl = $('spotifyLink');
 
-The user has provided this Spotify track URL: ${url}
-Spotify Track ID: ${trackId}
+  const title = track.trackTitle || (oembed && oembed.title) || 'Unknown track';
+  const artists = (track.artists || []).map(a => a.name).join(', ');
 
-First, identify the track from the Spotify URL/ID using your training knowledge. Then provide a laser-precise expert breakdown.
+  titleEl.textContent = title;
+  artistEl.textContent = artists || (oembed && oembed.author_name) || 'Unknown artist';
 
-Return ONLY a valid JSON object (no markdown, no extra text) in this exact schema:
+  if (oembed && oembed.thumbnail_url) {
+    artEl.src = oembed.thumbnail_url;
+    artEl.style.display = 'block';
+    placeholderEl.style.display = 'none';
+  } else {
+    artEl.style.display = 'none';
+    placeholderEl.style.display = 'flex';
+  }
 
-{
-  "track_name": "The actual song title",
-  "artist_name": "The actual artist name",
-  "stats": {
-    "bpm": "estimated BPM or range (e.g. 128 or 95-100)",
-    "key": "musical key (e.g. A minor, F# major)",
-    "time_sig": "time signature (e.g. 4/4)",
-    "duration": "track duration (e.g. 3:42)"
-  },
-  "structure": [
-    {
-      "timestamp": "0:00",
-      "section": "INTRO",
-      "description": "Detailed description of what happens musically - instrumentation, texture, energy, production elements",
-      "tags": ["sparse", "building", "synth pad"]
+  badgesEl.innerHTML = '<span class="badge badge-green">SPOTIFY</span><span class="badge badge-purple">RECCOBEATS</span><span class="badge badge-red">DEEP SCAN</span>';
+
+  linkEl.href = spotifyUrl;
+  linkEl.style.display = 'inline-block';
+  $('trackCard').classList.add('show');
+}
+
+function renderAnalysis(track, f) {
+  const out = $('analysisOutput');
+  let html = '';
+
+  const tempo = f.tempo ? Math.round(f.tempo) : '\u2014';
+  const keyName = (typeof f.key === 'number' && f.key >= 0) ? PITCH_CLASSES[f.key] : '\u2014';
+  const modeName = (typeof f.mode === 'number') ? MODE_NAMES[f.mode] : '';
+  const fullKey = keyName !== '\u2014' ? (keyName + ' ' + modeName).trim() : '\u2014';
+  const timeSig = f.time_signature ? f.time_signature + '/4' : '\u2014';
+  const duration = track.durationMs ? msToTime(track.durationMs) : '\u2014';
+
+  html += '<div class="section-header"><div class="section-tag">Signal Stats</div><div class="section-line"></div></div>';
+  html += '<div class="stats-row">';
+  [['BPM', tempo], ['KEY', fullKey], ['TIME', timeSig], ['LENGTH', duration]].forEach((pair, i) => {
+    html += '<div class="stat-cell" style="animation-delay:' + (i*0.07) + 's"><span class="stat-val">' + pair[1] + '</span><span class="stat-key">' + pair[0] + '</span></div>';
+  });
+  html += '</div>';
+
+  const featureMap = [
+    { key: 'energy', label: 'Energy' },
+    { key: 'danceability', label: 'Danceability' },
+    { key: 'valence', label: 'Positivity' },
+    { key: 'acousticness', label: 'Acousticness' },
+    { key: 'instrumentalness', label: 'Instrumentalness' },
+    { key: 'liveness', label: 'Liveness' },
+    { key: 'speechiness', label: 'Speechiness' },
+    { key: 'loudness', label: 'Loudness', isLoudness: true }
+  ];
+
+  html += '<div class="section-header"><div class="section-tag">Audio Features</div><div class="section-line"></div></div>';
+  html += '<div class="features-grid">';
+  featureMap.forEach((feat, i) => {
+    const raw = f[feat.key];
+    if (raw === undefined || raw === null) return;
+    let display, fillPct, desc;
+    if (feat.isLoudness) {
+      display = (Math.round(raw * 10) / 10) + ' dB';
+      fillPct = Math.max(0, Math.min(100, ((raw + 60) / 60) * 100));
+      desc = raw > -6 ? 'Heavily compressed, modern loud master' : raw > -14 ? 'Standard streaming loudness' : 'Dynamic, less compressed';
+    } else {
+      display = pct(raw) + '%';
+      fillPct = pct(raw);
+      desc = describeFeature(feat.key, raw);
     }
-  ],
-  "melody": {
-    "overview": "2-3 sentence expert analysis of the melodic content, vocal style, motifs, hooks, and how melody relates to the overall composition",
-    "key_moments": "Describe 2-3 specific melodic highlights or techniques used"
-  },
-  "production": {
-    "overview": "2-3 sentence expert breakdown of the production style, mixing approach, notable sounds, layers, and sonic signature",
-    "signature_elements": "Describe the 2-3 most distinctive production elements"
-  },
-  "vibe": {
-    "primary_mood": "Single evocative word or phrase (e.g. Melancholic Defiance)",
-    "energy": 75,
-    "danceability": 60,
-    "tension": 40,
-    "emotional_arc": "Describe the emotional journey of the track from start to finish in 2 sentences",
-    "best_listened": "Describe the ideal listening context/setting for this track"
-  },
-  "verdict": "1-2 sentence sharp editorial take on this track - what makes it work or not work, its place in the artist's catalogue or genre"
-}
+    html += '<div class="feature-item" style="animation-delay:' + (i*0.06) + 's">';
+    html += '<div class="feature-head"><span class="feature-label">' + feat.label + '</span><span class="feature-value">' + display + '</span></div>';
+    html += '<div class="feature-bar"><div class="feature-bar-fill" data-width="' + fillPct + '"></div></div>';
+    html += '<div class="feature-desc">' + desc + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
 
-Important:
-- If you can identify the track, provide real precise data. If you cannot identify it from the ID, set track_name to "Unrecognised Track" and artist_name to "Unknown Artist" but still populate all fields with plausible analysis based on any genre/context clues from the URL.
-- Structure array should have 6-10 sections covering the full track with realistic timestamps
-- Tags in structure should be specific musical descriptors (3-5 per section)
-- Energy/danceability/tension are 0-100 integers
-- Be specific, precise, use proper music terminology
-- Pure JSON only, zero preamble or postamble`;
-}
-
-function renderAnalysis(data) {
-  const out = document.getElementById('analysisOutput');
-  out.innerHTML = '';
-
-  // Stats row
-  if (data.stats) {
-    const s = data.stats;
-    let delay = 0;
-    out.innerHTML += `
-      <div class="section-header">
-        <div class="section-tag">Signal Stats</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="stats-row">
-        ${[['BPM', s.bpm], ['KEY', s.key], ['TIME', s.time_sig], ['DURATION', s.duration]].map(([k,v], i) => `
-          <div class="stat-cell" style="animation-delay:${i*0.08}s">
-            <span class="stat-val">${v || '—'}</span>
-            <span class="stat-key">${k}</span>
-          </div>
-        `).join('')}
-      </div>
-    `;
+  if (typeof f.valence === 'number' && typeof f.energy === 'number') {
+    const moodLabel = describeMood(f.valence, f.energy);
+    html += '<div class="section-header"><div class="section-tag">Mood Quadrant</div><div class="section-line"></div></div>';
+    html += '<div class="mood-canvas"><div class="mood-grid" id="moodGrid">';
+    html += '<div class="mood-axis-label top">HIGH ENERGY</div>';
+    html += '<div class="mood-axis-label bottom">LOW ENERGY</div>';
+    html += '<div class="mood-axis-label left">NEGATIVE</div>';
+    html += '<div class="mood-axis-label right">POSITIVE</div>';
+    html += '<div class="mood-cross-h"></div><div class="mood-cross-v"></div>';
+    html += '<div class="mood-quad-label" style="top:14%;right:14%">EUPHORIC</div>';
+    html += '<div class="mood-quad-label" style="top:14%;left:14%">TENSE</div>';
+    html += '<div class="mood-quad-label" style="bottom:14%;right:14%">CONTENT</div>';
+    html += '<div class="mood-quad-label" style="bottom:14%;left:14%">SOMBRE</div>';
+    html += '<div class="mood-dot" id="moodDot" style="left:50%;top:50%"></div>';
+    html += '</div><div class="mood-readout">Mood: <span>' + moodLabel + '</span></div></div>';
   }
 
-  // Structure / Timeline
-  if (data.structure && data.structure.length) {
-    out.innerHTML += `
-      <div class="section-header">
-        <div class="section-tag">Structure Timeline</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="timeline">
-        ${data.structure.map((seg, i) => `
-          <div class="timeline-item" style="animation-delay:${0.05 + i*0.07}s">
-            <div class="ts">${seg.timestamp || '—'}</div>
-            <div class="segment">
-              <div class="seg-name">${seg.section || '—'}</div>
-              <div class="seg-desc">${seg.description || ''}</div>
-              ${seg.tags && seg.tags.length ? `
-                <div class="seg-tags">
-                  ${seg.tags.map(t => `<span class="seg-tag">${t}</span>`).join('')}
-                </div>
-              ` : ''}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    `;
-  }
+  html += '<div class="section-header"><div class="section-tag">Interpretation</div><div class="section-line"></div></div>';
+  generateNarrative(f).forEach((p, i) => {
+    html += '<div class="prose-block" style="animation-delay:' + (i*0.1) + 's">' + p + '</div>';
+  });
 
-  // Melody
-  if (data.melody) {
-    out.innerHTML += `
-      <div class="section-header">
-        <div class="section-tag">Melody & Hooks</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="prose-block accent3" style="animation-delay:0.1s">
-        <strong>Overview —</strong> ${data.melody.overview || ''}
-      </div>
-      <div class="prose-block accent3" style="animation-delay:0.2s">
-        <strong>Key Moments —</strong> ${data.melody.key_moments || ''}
-      </div>
-    `;
-  }
-
-  // Production
-  if (data.production) {
-    out.innerHTML += `
-      <div class="section-header">
-        <div class="section-tag">Production Analysis</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="prose-block" style="animation-delay:0.1s">
-        <strong>Overview —</strong> ${data.production.overview || ''}
-      </div>
-      <div class="prose-block" style="animation-delay:0.2s">
-        <strong>Signature Elements —</strong> ${data.production.signature_elements || ''}
-      </div>
-    `;
-  }
-
-  // Vibe
-  if (data.vibe) {
-    const v = data.vibe;
-    out.innerHTML += `
-      <div class="section-header">
-        <div class="section-tag">Vibe Profile</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="vibe-grid">
-        ${[
-          ['Primary Mood', v.primary_mood, null],
-          ['Energy Level', v.energy + '/100', v.energy],
-          ['Danceability', v.danceability + '/100', v.danceability],
-          ['Tension', v.tension + '/100', v.tension]
-        ].map(([label, val, pct], i) => `
-          <div class="vibe-item" style="animation-delay:${i*0.08}s">
-            <div class="vibe-label">${label}</div>
-            <div class="vibe-value">${val}</div>
-            ${pct !== null ? `
-              <div class="vibe-bar-track">
-                <div class="vibe-bar-fill" data-width="${pct}"></div>
-              </div>
-            ` : ''}
-          </div>
-        `).join('')}
-      </div>
-      <div class="prose-block accent2" style="animation-delay:0.1s; margin-top: 12px;">
-        <strong>Emotional Arc —</strong> ${v.emotional_arc || ''}
-      </div>
-      <div class="prose-block accent2" style="animation-delay:0.2s">
-        <strong>Best Listened —</strong> ${v.best_listened || ''}
-      </div>
-    `;
-  }
-
-  // Verdict
-  if (data.verdict) {
-    out.innerHTML += `
-      <div class="section-header">
-        <div class="section-tag">Verdict</div>
-        <div class="section-line"></div>
-      </div>
-      <div class="prose-block accent" style="animation-delay:0.1s; font-size: 14px; line-height: 1.8; color: var(--text);">
-        ${data.verdict}
-      </div>
-    `;
-  }
-
+  out.innerHTML = html;
   out.classList.add('show');
-  document.getElementById('newAnalysisBtn').classList.add('show');
-  setAnalyseBtn(false);
+  $('newAnalysisBtn').classList.add('show');
+  setBtnState(false);
 
-  // Trigger vibe bar animations
   setTimeout(() => {
-    document.querySelectorAll('.vibe-bar-fill').forEach(bar => {
+    document.querySelectorAll('.feature-bar-fill').forEach(bar => {
       bar.style.width = bar.dataset.width + '%';
     });
-  }, 300);
+    if (typeof f.valence === 'number' && typeof f.energy === 'number') {
+      const dot = $('moodDot');
+      if (dot) {
+        dot.style.left = (f.valence * 100) + '%';
+        dot.style.top = ((1 - f.energy) * 100) + '%';
+      }
+    }
+  }, 200);
 
-  // Scroll to output
   setTimeout(() => {
-    document.getElementById('trackCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }, 100);
+    $('trackCard').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, 80);
 }
 
 function resetTool() {
-  document.getElementById('spotifyUrl').value = '';
-  document.getElementById('trackCard').classList.remove('show');
-  document.getElementById('analysisOutput').classList.remove('show');
-  document.getElementById('analysisOutput').innerHTML = '';
-  document.getElementById('newAnalysisBtn').classList.remove('show');
-  clearError();
-  document.getElementById('spotifyUrl').focus();
+  $('spotifyUrl').value = '';
+  $('trackCard').classList.remove('show');
+  $('analysisOutput').classList.remove('show');
+  $('analysisOutput').innerHTML = '';
+  $('newAnalysisBtn').classList.remove('show');
+  setError('');
+  $('spotifyUrl').focus();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
-// Enter key support
-document.getElementById('spotifyUrl').addEventListener('keydown', (e) => {
+$('analyseBtn').addEventListener('click', startAnalysis);
+$('newAnalysisBtn').addEventListener('click', resetTool);
+$('spotifyUrl').addEventListener('keydown', e => {
   if (e.key === 'Enter') startAnalysis();
 });
 </script>
